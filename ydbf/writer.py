@@ -87,35 +87,36 @@ class YDbfWriter(object):
 
     def _makeActions(self):
         def py2dbf_date(val, size, dec):
-            return (val and self.date2dbf(val)) or '        '
+            return (val and self.date2dbf(val)) or b'        '
         
         def py2dbf_logic(val, size, dec):
-            return (val and 'T') or 'F'
+            return (val and b'T') or b'F'
         
         def py2dbf_unicode(val, size, dec):
             return (val and val[:size].encode(self.encoding).ljust(size)) or \
-                   ' '*size
+                   b' '*size
         
         def py2dbf_string(val, size, dec):
-            return (val and str(val)[:size].ljust(size)) or ' '*size
+            return (val and str(val)[:size].ljust(size)) or b' '*size
         
         def py2dbf_integer(val, size, dec):
-            return ((val and str(val)) or '0').rjust(size)
+            return ((val and str(val).encode('ascii')) or b'0').rjust(size)
         
         def py2dbf_decimal(val, size, dec):
-            return ( (val and ("%%.%df"%dec) % float(str(val))) or \
-                     '0.%s'%('0'*dec)
-                   ).rjust(size)
+            return (
+                (val and ("%%.%df"%dec) % float(str(val)))
+                or '0.%s'%('0'*dec)
+                   ).rjust(size).encode('ascii')
         
         self.action_resolvers = (
-            lambda typ, size, dec: (typ == 'C' and self.use_unicode) and \
+            lambda typ, size, dec: (typ == b'C' and self.use_unicode) and \
                                    py2dbf_unicode,
-            lambda typ, size, dec: (typ == 'C' and not self.use_unicode) and \
+            lambda typ, size, dec: (typ == b'C' and not self.use_unicode) and \
                                    py2dbf_string,
-            lambda typ, size, dec: (typ == 'N' and dec) and py2dbf_decimal,
-            lambda typ, size, dec: (typ == 'N' and not dec) and py2dbf_integer,
-            lambda typ, size, dec: typ == 'D' and py2dbf_date,
-            lambda typ, size, dec: typ == 'L' and py2dbf_logic,
+            lambda typ, size, dec: (typ == b'N' and dec) and py2dbf_decimal,
+            lambda typ, size, dec: (typ == b'N' and not dec) and py2dbf_integer,
+            lambda typ, size, dec: typ == b'D' and py2dbf_date,
+            lambda typ, size, dec: typ == b'L' and py2dbf_logic,
         )
         for name, typ, size, dec in self.fields:
             for resolver in self.action_resolvers:
@@ -125,7 +126,7 @@ class YDbfWriter(object):
                     break
             if not action:
                 raise ValueError("Cannot find python-to-dbf converter "
-                                 "for field %s (type %s)" % (name, typ))        
+                                 "for field %s (type %s)" % (name, typ))
         
 
     def _writeHeader(self):
@@ -141,14 +142,14 @@ class YDbfWriter(object):
                                self.recsize, self.lang)
         self.fh.write(self.hdr)
         for name, typ, size, deci in self.fields:
-            if typ not in ('N', 'D', 'L', 'C'):
+            if typ not in (b'N', b'D', b'L', b'C'):
                 raise ValueError("Unknown type %r on field %s" % (typ, name))
-            name = name.ljust(11, '\x00')
+            name = name.ljust(11, b'\x00')
             fld = struct.pack(lib.FIELD_DESCRIPTION_FORMAT,
                               name, typ, size, deci)
             self.fh.write(fld)
         # terminator
-        self.fh.write('\x0d')
+        self.fh.write(b'\x0d')
         if pos > 0:
             self.fh.seek(pos)
 
@@ -171,9 +172,9 @@ class YDbfWriter(object):
         for rec in records:
             i += 1
             try:
-                raw_rec = ''.join(self.converters[name](rec[name], size, dec)
+                raw_rec = b''.join(self.converters[name](rec[name], size, dec)
                                   for name, typ, size, dec in self.fields)
-            except UnicodeDecodeError, err:
+            except UnicodeDecodeError as err:
                 self.flush()
                 if self.use_unicode:
                     msg = "Error occured while writing rec #%d. You are "
@@ -189,7 +190,7 @@ class YDbfWriter(object):
                     "bug in your code. Check record data: %s" % (i, rec)
                 args = list(err.args[:-1]) + [msg]
                 raise UnicodeDecodeError(*args)
-            except UnicodeEncodeError, err:
+            except UnicodeEncodeError as err:
                 self.flush()            
                 if self.use_unicode:
                     msg = "Error occured while writing rec #%d. You are "
@@ -207,20 +208,20 @@ class YDbfWriter(object):
                     "please. Record data: %s " % (i, rec)
                 args = list(err.args[:-1]) + [msg]
                 raise UnicodeEncodeError(*args)
-            except (IndexError, ValueError, TypeError, KeyError), err:
+            except (IndexError, ValueError, TypeError, KeyError) as err:
                 self.flush()            
                 raise RuntimeError("Error occured (%s: %s) while reading "
                                    "rec #%d. Record data: %s" %
                                    (err.__class__.__name__, err, i, rec))
             # first empty symbol is a deletion flag
-            self.fh.write(' '+raw_rec)
+            self.fh.write(b' '+raw_rec)
             self.numrec = i
             if divmod(i, 1000)[1] == 0:
                 # each 1k records flush header
                 self.flush()
         self._writeHeader()
         # End of file
-        self.fh.write('\x1A')
+        self.fh.write(b'\x1A')
         self.fh.flush()
 
     def __enter__(self):

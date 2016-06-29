@@ -136,7 +136,7 @@ def date2dbf(dt):
     """
     if not isinstance(dt, datetime.date):
         raise TypeError("Espects datetime.date instead of %s" % type(dt))
-    return "%04d%02d%02d" % (dt.year, dt.month, dt.day)
+    return ("%04d%02d%02d" % (dt.year, dt.month, dt.day)).encode('ascii')
     
 def dbf2str(dbf_str):
     """
@@ -162,7 +162,7 @@ def str2dbf(dt_str):
         `dt_str`:
             string in format DD.MM.YYYY
     """
-    if not isinstance(dt_str, basestring):
+    if not isinstance(dt_str, str):
         raise TypeError("Espects string or unicode instead of %s"
                          % type(dt_str))
     str_l = len(dt_str)
@@ -170,7 +170,7 @@ def str2dbf(dt_str):
         raise ValueError('Datestring must be 10 symbols (DD.MM.YYYY) '
                          'length instead of %d' % str_l)
     d, m, y = dt_str.split('.')
-    return ''.join((y, m, d))
+    return ''.join((y, m, d)).encode('ascii')
 
 # References:
 # [dbfspec]: http://www.clicketyclick.dk/databases/xbase/format/index.html

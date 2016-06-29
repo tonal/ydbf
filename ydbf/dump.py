@@ -66,7 +66,7 @@ def show_info(files):
             'last_change': str(reader.dt),
             'fields_number': str(reader.numfields),
         }
-        print """\
+        print("""\
 Filename:       %(filename)s
 Version:        %(signature)s (%(version)s)
 Encoding:       %(lang_code)s (%(encoding)s, %(language)s)
@@ -77,11 +77,11 @@ Last change:    %(last_change)s
 Num of fields:  %(fields_number)s
 ===========================================
 Num   Name                Type Len  Decimal
--------------------------------------------""" % header_info
+-------------------------------------------""" % header_info)
 
         for i, (name, type_, length, dec) in enumerate(reader.fields):
-            print "% 3d.  %s  %s  %s  %d" % \
-                (i+1, name.ljust(20), type_, str(length).rjust(3), dec)
+            print("% 3d.  %s  %s  %s  %d" % 
+                (i+1, name.ljust(20), type_, str(length).rjust(3), dec))
 
 def parse_options(args):
     """

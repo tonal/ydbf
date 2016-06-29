@@ -23,7 +23,7 @@ __all__ = ["YDbfStrictReader", "YDbfReader"]
 
 import datetime
 from struct import calcsize, unpack
-from itertools import izip
+#from itertools import izip
 
 from ydbf import lib
 
@@ -111,7 +111,7 @@ class YDbfReader(object):
             return self.dbf2date(val)
         
         def dbf2py_logic(val, size, dec):
-            return val.strip() in ("Y", "y", "T", "t")
+            return val.strip() in (b"Y", b"y", b"T", b"t")
         
         def dbf2py_unicode(val, size, dec):
             return val.decode(self.encoding).rstrip()
@@ -126,14 +126,14 @@ class YDbfReader(object):
             return Decimal(('%%.%df'%dec) % float(val.strip() or 0.0))
 
         self.action_resolvers = (
-            lambda typ, size, dec: (typ == 'C' and self.encoding) and \
+            lambda typ, size, dec: (typ == b'C' and self.encoding) and \
                                     dbf2py_unicode,
-            lambda typ, size, dec: (typ == 'C' and not self.encoding) and \
+            lambda typ, size, dec: (typ == b'C' and not self.encoding) and \
                                     dbf2py_string,
-            lambda typ, size, dec: (typ == 'N' and dec) and dbf2py_decimal,
-            lambda typ, size, dec: (typ == 'N' and not dec) and dbf2py_integer,
-            lambda typ, size, dec: typ == 'D' and dbf2py_date,
-            lambda typ, size, dec: typ == 'L' and dbf2py_logic,
+            lambda typ, size, dec: (typ == b'N' and dec) and dbf2py_decimal,
+            lambda typ, size, dec: (typ == b'N' and not dec) and dbf2py_integer,
+            lambda typ, size, dec: typ == b'D' and dbf2py_date,
+            lambda typ, size, dec: typ == b'L' and dbf2py_logic,
         )
         for name, typ, size, dec in self._fields:
             for resolver in self.action_resolvers:
@@ -167,23 +167,23 @@ class YDbfReader(object):
         
         numfields = (lenheader - 33) // 32
         fields = []
-        for fieldno in xrange(numfields):
+        for fieldno in range(numfields):
             name, typ, size, deci = unpack(lib.FIELD_DESCRIPTION_FORMAT,
                                                   self.fh.read(32))
-            name = name.split('\0', 1)[0]       # NULL is a end of string
-            if typ not in ('N', 'D', 'L', 'C'):
+            name = name.split(b'\0', 1)[0]       # NULL is a end of string
+            if typ not in (b'N', b'D', b'L', b'C'):
                 raise ValueError("Unknown type %r on field %s" % (typ, name))
             fields.append((name, typ, size, deci))
 
         terminator = self.fh.read(1)
-        if terminator != '\x0d':
+        if terminator != b'\x0d':
             raise ValueError("Terminator should be 0x0d. Terminator is a "
                              "delimiter, which splits header and data "
                              "sections in file. By specification it should be "
                              "0x0d, but it '%s'. This may be as result of "
                              "corrupted file, non-DBF data or error in YDbf "
                              "library." % hex(terminator))
-        fields.insert(0, ('_deletion_flag', 'C', 1, 0))
+        fields.insert(0, (b'_deletion_flag', b'C', 1, 0))
         self.builtin__fields = fields  # with _deletion_flag
         self.builtin_fields = fields[1:] # without _deletion_flag
         if not self.fields:
@@ -254,17 +254,17 @@ class YDbfReader(object):
 
         converters = tuple((self.converters[name], name, size, dec)
                            for name, typ, size, dec in self._fields)
-        for i in xrange(self.start_from, self.stop_at):
+        for i in range(self.start_from, self.stop_at):
             record = unpack(self.recfmt, self.fh.read(self.recsize))
-            if not show_deleted and record[0] != ' ':
+            if not show_deleted and record[0] != b' ':
                 # deleted record
                 continue
             try:
-                yield dict((name, conv(val.split('\x00', 1)[0], size, dec))
+                yield dict((name, conv(val.split(b'\x00', 1)[0], size, dec))
                             for (conv, name, size, dec), val
-                            in izip(converters, record)
-                            if (name != '_deletion_flag' or show_deleted))
-            except UnicodeDecodeError, err:
+                            in zip(converters, record)
+                            if (name != b'_deletion_flag' or show_deleted))
+            except UnicodeDecodeError as err:
                 args = list(err.args[:-1]) + [
                     "Error occured while reading rec #%d. You are "
                     "using YDbfReader with unicode-related options: "
@@ -275,7 +275,7 @@ class YDbfReader(object):
                     "option" % (i, self.encoding, self.builtin_encoding,
                     hex(self.raw_lang), self.implicit_encoding, self.encoding)]
                 raise UnicodeDecodeError(*args)
-            except (IndexError, ValueError, TypeError, KeyError), err:
+            except (IndexError, ValueError, TypeError, KeyError) as err:
                 raise RuntimeError("Error occured (%s: %s) while reading rec "
                                    "#%d" % (err.__class__.__name__, err, i))
 
@@ -342,7 +342,7 @@ class YDbfStrictReader(YDbfReader):
                 os_size = os.stat(file_name)[6]
             except OSError:
                 return
-            dbf_size = long(self.lenheader + 1 + self.numrec*self.recsize)
+            dbf_size = int(self.lenheader + 1 + self.numrec*self.recsize)
             assert os_size == dbf_size, "Logical size (calculated from file " \
                                         "structure and number of records) " \
                                         "should be equal to size of file"
