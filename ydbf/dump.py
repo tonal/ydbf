@@ -80,7 +80,7 @@ Num   Name                Type Len  Decimal
 -------------------------------------------""" % header_info)
 
         for i, (name, type_, length, dec) in enumerate(reader.fields):
-            print("% 3d.  %s  %s  %s  %d" % 
+            print("% 3d.  %s  %s  %s  %d" %
                 (i+1, name.ljust(20), type_, str(length).rjust(3), dec))
 
 def parse_options(args):
@@ -182,7 +182,7 @@ def table_output_generator(fields_spec, data_iterator):
         names.append(name)
         # make data for header
         if len(name) > length:
-            name = name[:length-1] + '+'
+            name = name[:length-1] + b'+'
         format = '%% -%ds' % length
         header_data.append(format % name)
     # add newline at and of file
