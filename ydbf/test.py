@@ -141,26 +141,26 @@ class TestYDbfReader(unittest.TestCase):
     @testdata('simple.dbf')
     def test_header(self, fh):
         dbf = YDbfReader(fh)
-        self.assertEqual(dbf._fields, [(b'_deletion_flag', b'C', 1, 0),
-                                        (b'INT_FLD',      b'N', 4, 0),
-                                        (b'FLT_FLD',      b'N', 5, 2),
-                                        (b'CHR_FLD',      b'C', 6, 0),
-                                        (b'DTE_FLD',      b'D', 8, 0),
-                                        (b'BLN_FLD',      b'L', 1, 0)])
-        self.assertEqual(dbf.fields, [(b'INT_FLD',      b'N', 4, 0),
-                                       (b'FLT_FLD',      b'N', 5, 2),
-                                       (b'CHR_FLD',      b'C', 6, 0),
-                                       (b'DTE_FLD',      b'D', 8, 0),
-                                       (b'BLN_FLD',      b'L', 1, 0)])
+        self.assertEqual(dbf._fields, [('_deletion_flag', 'C', 1, 0),
+                                        ('INT_FLD',      'N', 4, 0),
+                                        ('FLT_FLD',      'N', 5, 2),
+                                        ('CHR_FLD',      'C', 6, 0),
+                                        ('DTE_FLD',      'D', 8, 0),
+                                        ('BLN_FLD',      'L', 1, 0)])
+        self.assertEqual(dbf.fields, [('INT_FLD',      'N', 4, 0),
+                                       ('FLT_FLD',      'N', 5, 2),
+                                       ('CHR_FLD',      'C', 6, 0),
+                                       ('DTE_FLD',      'D', 8, 0),
+                                       ('BLN_FLD',      'L', 1, 0)])
         self.assertEqual(dbf.numrec, 3)
         self.assertEqual(dbf.stop_at, 3)
         self.assertEqual(dbf.lenheader, 193)
         self.assertEqual(dbf.numfields, 5)
         self.assertEqual(dbf.recsize, 25)
         self.assertEqual(dbf.recfmt, '1s4s5s6s8s1s')
-        self.assertEqual(dbf.field_names, [b'INT_FLD', b'FLT_FLD',
-                                            b'CHR_FLD', b'DTE_FLD',
-                                            b'BLN_FLD'])
+        self.assertEqual(dbf.field_names, ['INT_FLD', 'FLT_FLD',
+                                            'CHR_FLD', 'DTE_FLD',
+                                            'BLN_FLD'])
     
     @testdata('simple.dbf')
     def test_len(self, fh):
@@ -170,19 +170,20 @@ class TestYDbfReader(unittest.TestCase):
     @testdata('simple.dbf')
     def test_call(self, fh):
         dbf = YDbfReader(fh)
-        reference_data = [{b'INT_FLD': 25,
-                           b'FLT_FLD': decimal.Decimal('12.34'),
-                           b'CHR_FLD': u'test',
-                           b'DTE_FLD': datetime.date(2006,  5,  7),
-                           b'BLN_FLD': True},
-                          {b'INT_FLD': 113,
-                           b'FLT_FLD': decimal.Decimal('1.01'),
-                           b'CHR_FLD': u'del',
-                           b'DTE_FLD': datetime.date(2006, 12, 23),
-                           b'BLN_FLD': False},
+        reference_data = [{'INT_FLD': 25,
+                           'FLT_FLD': decimal.Decimal('12.34'),
+                           'CHR_FLD': u'test',
+                           'DTE_FLD': datetime.date(2006,  5,  7),
+                           'BLN_FLD': True},
+                          {'INT_FLD': 113,
+                           'FLT_FLD': decimal.Decimal('1.01'),
+                           'CHR_FLD': u'del',
+                           'DTE_FLD': datetime.date(2006, 12, 23),
+                           'BLN_FLD': False},
                                # skipped deleted line
                          ]
-        self.assertEqual(list(dbf), reference_data)
+        lst = list(dbf)
+        self.assertEqual(lst, reference_data)
         self.assertEqual(list(dbf.records(start_from=1)),
                          [reference_data[1]])
         self.assertEqual(list(dbf.records(start_from=0, limit=1)),
@@ -193,16 +194,16 @@ class TestYDbfReader(unittest.TestCase):
         # OpenOffice produces wrong dbfs: it justify numbers on left and fill
         # it zeros (0x00)
         dbf = YDbfReader(fh)
-        reference_data = [{b'INT_FLD': 25,
-                           b'FLT_FLD': decimal.Decimal('12.34'),
-                           b'CHR_FLD': 'test',
-                           b'DTE_FLD': datetime.date(2006,  5,  7),
-                           b'BLN_FLD': True},
-                          {b'INT_FLD': 113,
-                           b'FLT_FLD': decimal.Decimal('1.01'),
-                           b'CHR_FLD': 'del',
-                           b'DTE_FLD': datetime.date(2006, 12, 23),
-                           b'BLN_FLD': False},
+        reference_data = [{'INT_FLD': 25,
+                           'FLT_FLD': decimal.Decimal('12.34'),
+                           'CHR_FLD': 'test',
+                           'DTE_FLD': datetime.date(2006,  5,  7),
+                           'BLN_FLD': True},
+                          {'INT_FLD': 113,
+                           'FLT_FLD': decimal.Decimal('1.01'),
+                           'CHR_FLD': 'del',
+                           'DTE_FLD': datetime.date(2006, 12, 23),
+                           'BLN_FLD': False},
                          ]
         self.assertEqual(list(dbf), reference_data)
         self.assertEqual(list(dbf.records(start_from=1)),
@@ -213,24 +214,24 @@ class TestYDbfReader(unittest.TestCase):
     @testdata('simple.dbf')
     def test_read_deleted(self, fh):
         dbf = YDbfReader(fh)
-        reference_data = [{b'_deletion_flag': u'',
-                           b'INT_FLD': 25,
-                           b'FLT_FLD': decimal.Decimal('12.34'),
-                           b'CHR_FLD': u'test',
-                           b'DTE_FLD': datetime.date(2006,  5,  7),
-                           b'BLN_FLD': True},
-                          {b'_deletion_flag': u'',
-                           b'INT_FLD': 113,
-                           b'FLT_FLD': decimal.Decimal('1.01'),
-                           b'CHR_FLD': u'del',
-                           b'DTE_FLD': datetime.date(2006, 12, 23),
-                           b'BLN_FLD': False},
-                          {b'_deletion_flag': u'*',
-                           b'INT_FLD': 7436,
-                           b'FLT_FLD': decimal.Decimal('0.50'),
-                           b'CHR_FLD': u'ex.',
-                           b'DTE_FLD': datetime.date(2006, 7, 15),
-                           b'BLN_FLD': True},
+        reference_data = [{'_deletion_flag': '',
+                           'INT_FLD': 25,
+                           'FLT_FLD': decimal.Decimal('12.34'),
+                           'CHR_FLD': 'test',
+                           'DTE_FLD': datetime.date(2006,  5,  7),
+                           'BLN_FLD': True},
+                          {'_deletion_flag': '',
+                           'INT_FLD': 113,
+                           'FLT_FLD': decimal.Decimal('1.01'),
+                           'CHR_FLD': 'del',
+                           'DTE_FLD': datetime.date(2006, 12, 23),
+                           'BLN_FLD': False},
+                          {'_deletion_flag': '*',
+                           'INT_FLD': 7436,
+                           'FLT_FLD': decimal.Decimal('0.50'),
+                           'CHR_FLD': 'ex.',
+                           'DTE_FLD': datetime.date(2006, 7, 15),
+                           'BLN_FLD': True},
                          ]
         self.assertEqual(list(dbf.records(show_deleted=True)), reference_data)
 
@@ -252,7 +253,7 @@ class TestReaderConverters(unittest.TestCase):
         return lambda x: self.dbf.converters[name](x, size, dec)
     
     def test_int(self):
-        conv = self._getConv(b'INT_FLD')
+        conv = self._getConv('INT_FLD')
         self.assertEqual(conv('    '), 0)
         self.assertEqual(conv('   0'), 0)
         self.assertEqual(conv(' 0  '), 0)
@@ -261,7 +262,7 @@ class TestReaderConverters(unittest.TestCase):
         self.assertRaises(ValueError, conv, 'foo')
 
     def test_decimal(self):
-        conv = self._getConv(b'FLT_FLD')
+        conv = self._getConv('FLT_FLD')
         self.assertEqual(conv('     '), decimal.Decimal('0.00'))
         self.assertEqual(conv(' 0   '), decimal.Decimal('0.00'))
         self.assertEqual(conv('    5'), decimal.Decimal('5.00'))
@@ -271,21 +272,21 @@ class TestReaderConverters(unittest.TestCase):
         self.assertRaises(ValueError, conv, 'foo')
 
     def test_char_unicode(self):
-        conv = self._getConv(b'CHR_FLD')
+        conv = self._getConv('CHR_FLD')
         self.assertEqual(conv(b'      '), '')
         self.assertEqual(conv(b'  x   '), '  x')
         self.assertEqual(conv(b'x     '), 'x')
         self.assertRaises(UnicodeDecodeError, conv, b'\xf2\xe5\xf1\xf2')
 
     def test_date(self):
-        conv = self._getConv(b'DTE_FLD')
+        conv = self._getConv('DTE_FLD')
         self.assertEqual(conv('20090727'), datetime.date(2009, 7, 27))
         self.assertEqual(conv('18990302'), datetime.date(1899, 3, 2))
         self.assertEqual(conv('        '), None)
         self.assertEqual(conv('foo'), None) #XXX  may be raise ValueError?
 
     def test_boolean(self):
-        conv = self._getConv(b'BLN_FLD')
+        conv = self._getConv('BLN_FLD')
         self.assertEqual(conv(b't'), True)
         self.assertEqual(conv(b'T'), True)
         self.assertEqual(conv(b'y'), True)
@@ -311,7 +312,7 @@ class TestReaderNonunicodeConverters(unittest.TestCase):
         return lambda x: self.dbf.converters[name](x, size, dec)
 
     def test_char_8bit(self):
-        conv = self._getConv(b'CHR_FLD')
+        conv = self._getConv('CHR_FLD')
         self.assertEqual(conv('      '), '')
         self.assertEqual(conv('  x   '), '  x')
         self.assertEqual(conv('x     '), 'x')
@@ -323,18 +324,18 @@ class TestYdbfWriter(unittest.TestCase):
         self.dbf_reference_data = b'\x03j\x06\x13\x03\x00\x00\x00\xc1\x00\x19\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00INT_FLD\x00\x00\x00\x00N\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00FLT_FLD\x00\x00\x00\x00N\x00\x00\x00\x00\x05\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00CHR_FLD\x00\x00\x00\x00C\x00\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00DTE_FLD\x00\x00\x00\x00D\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00BLN_FLD\x00\x00\x00\x00L\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r   2512.34test  20060507T  113 1.01del   20061223F 7436 0.50ex.   20060715T\x1a'
 
         self.reference_data = [
-        {b'INT_FLD':  25, b'FLT_FLD':12.34, b'CHR_FLD':'test',
-         b'DTE_FLD':datetime.date(2006,  5,  7), b'BLN_FLD':True},
-        {b'INT_FLD': 113, b'FLT_FLD': 1.01, b'CHR_FLD': 'del',
-         b'DTE_FLD':datetime.date(2006, 12, 23), b'BLN_FLD':False},
-        {b'INT_FLD':7436, b'FLT_FLD': 0.5,  b'CHR_FLD': 'ex.',
-         b'DTE_FLD':datetime.date(2006,  7, 15), b'BLN_FLD':True},
+        {'INT_FLD':  25, 'FLT_FLD':12.34, 'CHR_FLD':'test',
+         'DTE_FLD':datetime.date(2006,  5,  7), 'BLN_FLD':True},
+        {'INT_FLD': 113, 'FLT_FLD': 1.01, 'CHR_FLD': 'del',
+         'DTE_FLD':datetime.date(2006, 12, 23), 'BLN_FLD':False},
+        {'INT_FLD':7436, 'FLT_FLD': 0.5,  'CHR_FLD': 'ex.',
+         'DTE_FLD':datetime.date(2006,  7, 15), 'BLN_FLD':True},
         ]
-        self.fields = [(b'INT_FLD',      b'N', 4, 0),
-                       (b'FLT_FLD',      b'N', 5, 2),
-                       (b'CHR_FLD',      b'C', 6, 0),
-                       (b'DTE_FLD',      b'D', 8, 0),
-                       (b'BLN_FLD',      b'L', 1, 0)]
+        self.fields = [('INT_FLD',      'N', 4, 0),
+                       ('FLT_FLD',      'N', 5, 2),
+                       ('CHR_FLD',      'C', 6, 0),
+                       ('DTE_FLD',      'D', 8, 0),
+                       ('BLN_FLD',      'L', 1, 0)]
         self.fh = StringIO()
         self.dbf = YDbfWriter(self.fh, self.fields)
     

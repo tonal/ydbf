@@ -126,14 +126,14 @@ class YDbfReader(object):
             return Decimal(('%%.%df'%dec) % float(val.strip() or 0.0))
 
         self.action_resolvers = (
-            lambda typ, size, dec: (typ == b'C' and self.encoding) and \
+            lambda typ, size, dec: (typ == 'C' and self.encoding) and \
                                     dbf2py_unicode,
-            lambda typ, size, dec: (typ == b'C' and not self.encoding) and \
+            lambda typ, size, dec: (typ == 'C' and not self.encoding) and \
                                     dbf2py_string,
-            lambda typ, size, dec: (typ == b'N' and dec) and dbf2py_decimal,
-            lambda typ, size, dec: (typ == b'N' and not dec) and dbf2py_integer,
-            lambda typ, size, dec: typ == b'D' and dbf2py_date,
-            lambda typ, size, dec: typ == b'L' and dbf2py_logic,
+            lambda typ, size, dec: (typ == 'N' and dec) and dbf2py_decimal,
+            lambda typ, size, dec: (typ == 'N' and not dec) and dbf2py_integer,
+            lambda typ, size, dec: typ == 'D' and dbf2py_date,
+            lambda typ, size, dec: typ == 'L' and dbf2py_logic,
         )
         for name, typ, size, dec in self._fields:
             for resolver in self.action_resolvers:
@@ -173,7 +173,8 @@ class YDbfReader(object):
             name = name.split(b'\0', 1)[0]       # NULL is a end of string
             if typ not in (b'N', b'D', b'L', b'C'):
                 raise ValueError("Unknown type %r on field %s" % (typ, name))
-            fields.append((name, typ, size, deci))
+            fields.append(
+                (name.decode('ascii'), typ.decode('ascii'), size, deci))
 
         terminator = self.fh.read(1)
         if terminator != b'\x0d':
@@ -183,7 +184,7 @@ class YDbfReader(object):
                              "0x0d, but it '%s'. This may be as result of "
                              "corrupted file, non-DBF data or error in YDbf "
                              "library." % hex(terminator))
-        fields.insert(0, (b'_deletion_flag', b'C', 1, 0))
+        fields.insert(0, ('_deletion_flag', 'C', 1, 0))
         self.builtin__fields = fields  # with _deletion_flag
         self.builtin_fields = fields[1:] # without _deletion_flag
         if not self.fields:
@@ -263,7 +264,7 @@ class YDbfReader(object):
                 yield dict((name, conv(val.split(b'\x00', 1)[0], size, dec))
                             for (conv, name, size, dec), val
                             in zip(converters, record)
-                            if (name != b'_deletion_flag' or show_deleted))
+                            if (name != '_deletion_flag' or show_deleted))
             except UnicodeDecodeError as err:
                 args = list(err.args[:-1]) + [
                     "Error occured while reading rec #%d. You are "

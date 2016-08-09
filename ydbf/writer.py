@@ -109,14 +109,14 @@ class YDbfWriter(object):
                    ).rjust(size).encode('ascii')
         
         self.action_resolvers = (
-            lambda typ, size, dec: (typ == b'C' and self.use_unicode) and \
+            lambda typ, size, dec: (typ == 'C' and self.use_unicode) and \
                                    py2dbf_unicode,
-            lambda typ, size, dec: (typ == b'C' and not self.use_unicode) and \
+            lambda typ, size, dec: (typ == 'C' and not self.use_unicode) and \
                                    py2dbf_string,
-            lambda typ, size, dec: (typ == b'N' and dec) and py2dbf_decimal,
-            lambda typ, size, dec: (typ == b'N' and not dec) and py2dbf_integer,
-            lambda typ, size, dec: typ == b'D' and py2dbf_date,
-            lambda typ, size, dec: typ == b'L' and py2dbf_logic,
+            lambda typ, size, dec: (typ == 'N' and dec) and py2dbf_decimal,
+            lambda typ, size, dec: (typ == 'N' and not dec) and py2dbf_integer,
+            lambda typ, size, dec: typ == 'D' and py2dbf_date,
+            lambda typ, size, dec: typ == 'L' and py2dbf_logic,
         )
         for name, typ, size, dec in self.fields:
             for resolver in self.action_resolvers:
@@ -142,11 +142,11 @@ class YDbfWriter(object):
                                self.recsize, self.lang)
         self.fh.write(self.hdr)
         for name, typ, size, deci in self.fields:
-            if typ not in (b'N', b'D', b'L', b'C'):
+            if typ not in ('N', 'D', 'L', 'C'):
                 raise ValueError("Unknown type %r on field %s" % (typ, name))
-            name = name.ljust(11, b'\x00')
+            name = name.encode('ascii').ljust(11, b'\x00')
             fld = struct.pack(lib.FIELD_DESCRIPTION_FORMAT,
-                              name, typ, size, deci)
+                              name, typ.encode('ascii'), size, deci)
             self.fh.write(fld)
         # terminator
         self.fh.write(b'\x0d')
